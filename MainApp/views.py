@@ -4,6 +4,7 @@ import os
 from pydoc import apropos
 from django.shortcuts import render
 from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 from matplotlib.style import context
 import numpy as np
 import matplotlib.pyplot as plt
@@ -19,7 +20,8 @@ def RestPage(request):
         'judul' : 'REST API PERHITUNGAN APRIORI'
     }
     return JsonResponse(context, safe=False)
-
+    
+@csrf_exempt
 def ProsesApriori(request):
     dataset = pd.read_csv('Market_Basket_Optimisation.csv', header = None)
 
@@ -76,7 +78,7 @@ def ProsesApriori(request):
         StringPisah2 = StringAwal2.split("'")
         support = str(results2[ordHasil].support)
         confidence = str(results2[ordHasil].ordered_statistics[0].confidence)
-        lift = str(results2[ordHasil].ordered_statistics[0].confidence)
+        lift = str(results2[ordHasil].ordered_statistics[0].lift)
         hasilBismillah.append([stringPisah[1],StringPisah2[1], support, confidence, lift])
 
         ordHasil = ordHasil + 1
@@ -93,9 +95,7 @@ def ProsesApriori(request):
         ord = ord + 1
 
     context = {
-        'nama' : 'Aditia',
-        'hasil' : hasilPola,
-        'hasilBismillah' : hasilBismillah
+        'hasil' : hasilBismillah
     }
     return JsonResponse(context, safe=False)
 
