@@ -62,7 +62,7 @@ def ProsesApriori(request):
     ['beer', 'cheese']
 ]
     rules = apriori(transactions = transactions, min_support = 0.003, min_confidence = 0.2, min_lift = 3, min_length = 2, max_length = 2)
-    rules2 = apriori(transactions = DataMerge,  min_support = 0.003, min_confidence = 0.2, min_lift = 3, min_length = 2, max_length = 2)
+    rules2 = apriori(transactions = DataMerge,  min_support = 0.002, min_confidence = 0.5, min_lift = 3, min_length = 2, max_length = 2)
     results2 = list(rules2)
     results = list(rules)
 
