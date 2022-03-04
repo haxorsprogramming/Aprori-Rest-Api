@@ -9,5 +9,6 @@ urlpatterns = [
     path('list-produk/', MainApp.ListProduk),
     path('export-excel/', MainApp.ExportExcel),
     path('import-data-transaksi/', MainApp.ImportDataTransaksi),
-    path('write-to-csv/', MainApp.WriteCsv)
+    path('write-to-csv/', MainApp.WriteCsv),
+    path('proses-apriori', MainApp.ProsesApriori)
 ]

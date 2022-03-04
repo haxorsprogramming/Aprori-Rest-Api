@@ -1,4 +1,7 @@
 import imp
+import csv
+import os
+from pydoc import apropos
 from django.shortcuts import render
 from django.http import JsonResponse
 from matplotlib.style import context
@@ -12,21 +15,75 @@ from .models import Transaksi
 
 # Create your views here.
 def RestPage(request):
+    context  = {
+        'judul' : 'REST API PERHITUNGAN APRIORI'
+    }
+    return JsonResponse(context, safe=False)
+
+def ProsesApriori(request):
     dataset = pd.read_csv('Market_Basket_Optimisation.csv', header = None)
+
+    NoTransaksi = []
+    DataTransaksiArr = []
+    DataTransaksi = Transaksi.objects.all().values()
+    ord = 0
+    for x in DataTransaksi:
+        kodeFaktur = DataTransaksi[ord]['kode_faktur']
+        CekKode = kodeFaktur in NoTransaksi
+        if CekKode == False:
+            NoTransaksi.append(kodeFaktur)
+        ord = ord + 1
+    DataMerge = []
+    for x in NoTransaksi:
+        NoTransaksi = x
+        DtGroup = Transaksi.objects.filter(kode_faktur=NoTransaksi).values()
+        ordp = 0
+        DataListSub = []
+        for k in DtGroup:
+            kodeProdukTransaksi = DtGroup[ordp]['kode_produk']
+            DpCek = Produk.objects.filter(kode_produk=str(kodeProdukTransaksi)).count()
+            if DpCek > 0:
+                DataProduk = Produk.objects.filter(kode_produk=str(kodeProdukTransaksi)).first()
+                DataListSub.append(DataProduk.nama_produk)
+            ordp = ordp + 1
+        DataMerge.append(DataListSub)
+    
     transactions = []
     for i in range(0, 7501):
         transactions.append([str(dataset.values[i,j]) for j in range(0, 20)])
 
+    # print(transactions[0])
+    # print(DataMerge[0])
+    # pritn()
+    transactions2 = [
+    ['beer', 'nuts'],
+    ['beer', 'cheese']
+]
     rules = apriori(transactions = transactions, min_support = 0.003, min_confidence = 0.2, min_lift = 3, min_length = 2, max_length = 2)
-
+    rules2 = apriori(transactions = DataMerge,  min_support = 0.003, min_confidence = 0.2, min_lift = 3, min_length = 2, max_length = 2)
+    results2 = list(rules2)
     results = list(rules)
 
-    resultsinDataFrame = pd.DataFrame(inspect(results), columns = ['A', 'B', 'Support', 'Confidence', 'Nilai'])
-    hasilTerurut = resultsinDataFrame.nlargest(n = 10, columns = 'Nilai')
+    resultsinDataFrame = pd.DataFrame(inspect(results), columns = ['A', 'B', 'Support', 'Confidence', 'Lift'])
+    hasilTerurut = resultsinDataFrame.nlargest(n = 10, columns = 'Lift')
+    ordHasil = 0
+    hasilBismillah = []
 
-    sideA = resultsinDataFrame.nlargest(n = 10, columns = 'Nilai')["A"]
-    sideB = resultsinDataFrame.nlargest(n = 10, columns = 'Nilai')["B"]
-    nilai = resultsinDataFrame.nlargest(n = 10, columns = 'Nilai')["Nilai"]
+    for x in results2:
+        stringAwal = str(results2[ordHasil].items)
+        StringAwal2 = str(results2[ordHasil].ordered_statistics[0].items_add)
+        stringPisah = stringAwal.split("'")
+        StringPisah2 = StringAwal2.split("'")
+        support = str(results2[ordHasil].support)
+        confidence = str(results2[ordHasil].ordered_statistics[0].confidence)
+        lift = str(results2[ordHasil].ordered_statistics[0].confidence)
+        hasilBismillah.append([stringPisah[1],StringPisah2[1], support, confidence, lift])
+
+        ordHasil = ordHasil + 1
+        
+    sideA = resultsinDataFrame.nlargest(n = 10, columns = 'Lift')["A"]
+    sideB = resultsinDataFrame.nlargest(n = 10, columns = 'Lift')["B"]
+    nilai = resultsinDataFrame.nlargest(n = 10, columns = 'Lift')["Lift"]
 
     ord = 0
     hasilPola = []
@@ -37,7 +94,8 @@ def RestPage(request):
 
     context = {
         'nama' : 'Aditia',
-        'hasil' : hasilPola
+        'hasil' : hasilPola,
+        'hasilBismillah' : hasilBismillah
     }
     return JsonResponse(context, safe=False)
 
@@ -86,6 +144,8 @@ def WriteCsv(request):
     NoTransaksi = []
     DataTransaksiArr = []
     DataTransaksi = Transaksi.objects.all().values()
+    os.remove("RawTransaksi.csv")
+    
     ord = 0
     for x in DataTransaksi:
         kodeFaktur = DataTransaksi[ord]['kode_faktur']
@@ -100,10 +160,26 @@ def WriteCsv(request):
         DtGroup = Transaksi.objects.filter(kode_faktur=x).values()
         ordp = 0
         for k in DtGroup:
-            StringKode = StringKode + "," + DtGroup[ordp]['kode_produk']
+            kodeProdukTransaksi = DtGroup[ordp]['kode_produk']
+            DpCek = Produk.objects.filter(kode_produk=str(kodeProdukTransaksi)).count()
+            DpDp = ""
+            if DpCek > 0:
+                DataProduk = Produk.objects.filter(kode_produk=str(kodeProdukTransaksi)).first()
+                DpDp = DataProduk.nama_produk
+            StringKode = StringKode + "," + str(DpDp)
+            StrCv = StringKode[1:]
+            
             ordp = ordp + 1
+        
+        DataMarge.append([x, StrCv])
 
-        DataMarge.append([x, StringKode])
+    with open('RawTransaksi.csv', 'w', newline='') as csvfile:
+        spamwriter = csv.writer(csvfile, delimiter=',',quoting=csv.QUOTE_MINIMAL)
+        ord2 = 0
+        for k in DataMarge:
+            spamwriter.writerow([DataMarge[ord2][1]])
+            ord2 = ord2 + 1
+
     context  = {
         'produk' : 'sukses',
         'dataMarge' : DataMarge
